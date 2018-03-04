@@ -15,12 +15,21 @@ public class Bets {
     @Path("/new")
     @Produces(MediaType.APPLICATION_JSON)
         public String newTicket(Ticket ticket){
+        MySQL mySQL=new MySQL();
+        boolean ret1 = mySQL.checkLogin(ticket.login);
+        boolean ret2 = mySQL.checkToken(ticket.token, ticket.login);
 
-            MySQL mysql = new MySQL();
-            boolean ret1 = mysql.checkLogin(ticket.login);
+        if(ret1 && ret2) {
+            mySQL.insertBets(ticket);
 
-            return "{}";
         }
 
+        else {
+            System.out.println("Invalid");
+        }
+
+        return "{}";
+
+        }
 
 }

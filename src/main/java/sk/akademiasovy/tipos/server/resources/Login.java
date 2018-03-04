@@ -48,7 +48,7 @@ public class Login {
 
     public String logout(@PathParam("token") String token){
         MySQL mySQL = new MySQL();
-        mySQL.logout( token);
+        mySQL.logout(token);
         return "{}";
     }
 

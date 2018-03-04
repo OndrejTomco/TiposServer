@@ -1,6 +1,7 @@
 package sk.akademiasovy.tipos.server.db;
 
 import sk.akademiasovy.tipos.server.Signup;
+import sk.akademiasovy.tipos.server.Ticket;
 import sk.akademiasovy.tipos.server.User;
 
 import java.sql.Connection;
@@ -28,10 +29,10 @@ public class MySQL {
             ResultSet rs = ps.executeQuery();
             if(rs.next()){
                 User user=new User(rs.getString("firstName"),rs.getString("lastName"),rs.getString("login"),rs.getString("email"));
-                query = "UPDATE tokens SET token=? WHERE idu=?";
+                query = "INSERT into tokens(idu,token) VALUES (?,?)";
                 ps = conn.prepareStatement(query);
-                ps.setInt(2,rs.getInt("id"));
-                ps.setString(1, user.getToken());
+                ps.setInt(1,rs.getInt("id"));
+                ps.setString(2, user.getToken());
                 ps.executeUpdate();
                 System.out.println(ps);
                 return user;
@@ -49,7 +50,7 @@ public class MySQL {
             Class.forName(driver).newInstance();
             conn = DriverManager.getConnection(url, this.userName, this.password);
 
-            String query = "UPDATE tokens SET token=\"\" where token like ?";
+            String query = "Delete from tokens where token like ?";
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1,token);
             System.out.println(ps);
@@ -114,8 +115,84 @@ public class MySQL {
 
     public boolean checkLogin(String login) {
 
+        try {
+            Class.forName(driver).newInstance();
+            conn = DriverManager.getConnection(url, this.userName, this.password);
 
-        return true;
+            String query = "SELECT * FROM users Where login like ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1,login);
+            ResultSet rs=ps.executeQuery();
+
+            if(rs.next())
+                return true;
+            else
+                return false;
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean checkToken(String token,String login) {
+        try {
+            Class.forName(driver).newInstance();
+            conn = DriverManager.getConnection(url, this.userName, this.password);
+
+            String query = "SELECT token FROM tokens Where idu like(SELECT id FROM users where login like ?)";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1,login);
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            String dbToken = rs.getString("token");
+            System.out.println(dbToken + ',' + token);
+
+            if(token.equals(dbToken))
+                return true;
+            else
+                return false;
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void insertBets(Ticket ticket) {
+        try {
+            Class.forName(driver).newInstance();
+            conn = DriverManager.getConnection(url, this.userName, this.password);
+
+            String query = "INSERT INTO bets (idu) SELECT id FROM users where login like ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+
+            ps.setString(1,ticket.login);
+            System.out.println(ps);
+            ps.executeUpdate();
+            query="SELECT max(id) as max from bets where idu = (SELECT id FROM users where login like ?)";
+            ps = conn.prepareStatement(query);
+            ps.setString(1,ticket.login);
+            System.out.println(ps);
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            int id_bet=rs.getInt("max");
+            query = "INSERT INTO bet_details(idb,bet1, bet2, bet3, bet4, bet5) VALUES (?,?,?,?,?,?)";
+            ps= conn.prepareStatement(query);
+            ps.setInt(1,id_bet);
+            ps.setInt(2,ticket.bet1);
+            ps.setInt(3,ticket.bet2);
+            ps.setInt(4,ticket.bet3);
+            ps.setInt(5,ticket.bet4);
+            ps.setInt(6,ticket.bet5);
+            ps.executeUpdate();
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+
     }
 }
 
